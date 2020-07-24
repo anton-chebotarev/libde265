@@ -82,9 +82,9 @@ typedef volatile long de265_sync_int;
 inline int de265_sync_sub_and_fetch(de265_sync_int* cnt, int n)
 {
 #ifdef _WIN64
-  return _InterlockedAdd(cnt, -n);
+  return InterlockedAdd(cnt, -n);
 #elif _WIN32
-  return _InterlockedExchangeAdd(cnt, -n) - n;
+  return InterlockedExchangeAdd(cnt, -n) - n;
 #else
   return __sync_sub_and_fetch(cnt, n);
 #endif
@@ -93,9 +93,9 @@ inline int de265_sync_sub_and_fetch(de265_sync_int* cnt, int n)
 inline int de265_sync_add_and_fetch(de265_sync_int* cnt, int n)
 {
 #ifdef _WIN64
-  return _InterlockedAdd(cnt, n);
+  return InterlockedAdd(cnt, n);
 #elif _WIN32
-  return _InterlockedExchangeAdd(cnt, n) + n;
+  return InterlockedExchangeAdd(cnt, n) + n;
 #else
   return __sync_add_and_fetch(cnt, n);
 #endif
