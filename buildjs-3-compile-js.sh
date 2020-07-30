@@ -47,6 +47,7 @@ export EXPORTED_FUNCTIONS="[ \
 
 export LIBRARY_FUNCTIONS="[ \
     'memcpy', \
+    'memset', \
     'malloc', \
     'free'
 ]"
