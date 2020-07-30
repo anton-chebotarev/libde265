@@ -1,9 +1,24 @@
 #!/bin/bash
 
-echo "Pulling latest version..."
-git restore .
-git pull
-chmod 777 ./configure
+###git clone https://github.com/emscripten-core/emsdk.git
+###cd emsdk
+###git pull
+###./emsdk install latest
+###./emsdk activate latest
+
+###sudo apt update
+###sudo apt upgrade
+###sudo apt install python2
+###sudo apt-get install cmake
+###sudo apt-get install default-jre
+###sudo apt-get install automake-1.15
+###sudo apt install llvm
+
+###git restore .
+###git pull
+###chmod 777 ./configure
+
+###source ./emsdk_env.sh
 
 echo "Building shared library..."
 emconfigure ./configure --disable-sse --disable-dec265 --disable-enc265 --disable-sherlock265
