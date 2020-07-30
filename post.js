@@ -306,11 +306,14 @@ Image.prototype.get_height = function() {
 /**
  * @expose
  */
-Image.prototype.display = function(imageData, callback) {
+Image.prototype.display = function(imageData, contrast, callback) {
     var w = this.get_width();
     var h = this.get_height();
+
     var chroma = libde265.de265_get_chroma_format(this.img);
+
     var stride = _malloc(4);
+
     var y = libde265.de265_get_image_plane(this.img, 0, stride);
     var stridey = getValue(stride, "i32");
     var bppy = libde265.de265_get_bits_per_pixel(this.img, 0);
@@ -322,7 +325,7 @@ Image.prototype.display = function(imageData, callback) {
     var bppv = libde265.de265_get_bits_per_pixel(this.img, 2);
     _free(stride);
 
-    this.decoder.convert_yuv2rgb(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, imageData, callback);
+    this.decoder.display_image(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, imageData, callback);
 };
 
 function worker_func() {
@@ -338,7 +341,7 @@ function worker_func() {
             break;
 
         case "convert":
-            var img = _do_convert_yuv2rgb(data["data"]["chroma"], data["data"]["y"], data["data"]["u"], data["data"]["v"], data["data"]["w"], data["data"]["h"], data["data"]["stridey"], data["data"]["strideu"], data["data"]["stridev"], data["data"]["bppy"], data["data"]["bppu"], data["data"]["bppv"]);
+            var img = _do_convert_yuv2rgb(data["data"]["chroma"], data["data"]["y"], data["data"]["u"], data["data"]["v"], data["data"]["w"], data["data"]["h"], data["data"]["stridey"], data["data"]["strideu"], data["data"]["stridev"], data["data"]["bppy"], data["data"]["bppu"], data["data"]["bppv"], data["data"]["contrast"]);
             this.postMessage({"cmd": "converted", "data": {"image": img}});
             break;
 
@@ -365,6 +368,7 @@ var WorkerConverter = function() {
         }
         var blob = new Blob([
             "(function() {\n",
+            _do_convert_monochrome16.toString() + ";\n",
             _do_convert_yuv420.toString() + ";\n",
             _do_convert_yuv2rgb.toString() + ";\n",
             worker_func_data + ";\n",
@@ -405,14 +409,14 @@ WorkerConverter.prototype.destroy = function() {
     }
 };
 
-WorkerConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, imageData, callback) {
+WorkerConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, imageData, callback) {
     var msg = {
         "cmd": "convert",
         "data": {
             "chroma": chroma,
-            "y": new Uint8Array(y),
-            "u": new Uint8Array(u),
-            "v": new Uint8Array(v),
+            "y": y,
+            "u": u,
+            "v": v,
             "w": w,
             "h": h,
             "stridey": stridey,
@@ -420,7 +424,8 @@ WorkerConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, str
             "stridev": stridev,
             "bppy": bppy,
             "bppu": bppu,
-            "bppv": bppv
+            "bppv": bppv,
+            "contrast": contrast
         }
     };
     this.callbacks.push(function(data) {
@@ -444,12 +449,12 @@ var LocalConverter = function() {
 LocalConverter.prototype.destroy = function() {
 };
 
-LocalConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, imageData, callback) {
+LocalConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, imageData, callback) {
     _do_convert_yuv2rgb(chroma,
         y, u, v,
         w, h,
         stridey, strideu, stridev,
-        bppy, bppu, bppv,
+        bppy, bppu, bppv, contrast,
         imageData.data);
 
     callback(imageData);
@@ -460,12 +465,12 @@ LocalConverter.prototype.convert = function(chroma, y, u, v, w, h, stridey, stri
  *
  * @constructor
  */
-var Decoder = function() {
+var Decoder = function(forceLocalWorker) {
     this.image_callback = null;
     this.more = _malloc(2);
     this.stop = false;
     this.ctx = libde265.de265_new_decoder();
-    if (typeof Worker !== "undefined" && typeof Uint8ClampedArray !== "undefined" && typeof Blob !== "undefined") {
+    if (!forceLocalWorker && typeof Worker !== "undefined" && typeof Uint8ClampedArray !== "undefined" && typeof Blob !== "undefined") {
         this.converter = new WorkerConverter();
     } else {
         this.converter = new LocalConverter();
@@ -605,7 +610,50 @@ function _do_convert_yuv420(y, u, v, w, h, stridey, strideu, stridev, bppy, bppu
     }
 }
 
-function _do_convert_yuv2rgb(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, dest) {
+function _do_convert_monochrome16(y, w, h, stridey, bppy, dest, contrast) {
+    function __apply_contrast(val, inputMin, inputMax, outputMin, outputMax) {
+        if (val < inputMin) return outputMin;
+        if (val > inputMax) return outputMax;
+        return outputMin + (val - inputMin) * outputMax / (inputMax - inputMin);
+    }            
+        
+    var yval;
+    var xpos = 0;
+    var ypos = 0;
+    var w2 = w >> 1;
+    var maxi = w2*h;
+    var yoffset = 0;
+    var x2;
+    var i2;
+    
+    var bppdiffy = 16 - bppy;
+    
+    for (var i=0; i<maxi; i++) {
+        i2 = i << 1;
+        x2 = (xpos << 1);
+        
+        yval = __apply_contrast(y[yoffset + x2] << bppdiffy, contrast.from.min, contrast.from.max, contrast.to.min, contrast.to.max);
+        dest[(i2<<2)+0] = yval;
+        dest[(i2<<2)+1] = yval;
+        dest[(i2<<2)+2] = yval;
+        dest[(i2<<2)+3] = 0xff;
+
+        yval = __apply_contrast(y[yoffset + x2 + 1] << bppdiffy, contrast.from.min, contrast.from.max, contrast.to.min, contrast.to.max);
+        dest[((i2+1)<<2)+0] = yval;
+        dest[((i2+1)<<2)+1] = yval;
+        dest[((i2+1)<<2)+2] = yval;
+        dest[((i2+1)<<2)+3] = 0xff;
+
+        xpos++;
+        if (xpos === w2) {
+            xpos = 0;
+            ypos++;
+            yoffset += stridey / 2;
+        }
+    }
+}
+
+function _do_convert_yuv2rgb(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, dest) {
     if (!dest) {
         dest = new Uint8ClampedArray(w*h*4);
     }
@@ -613,8 +661,12 @@ function _do_convert_yuv2rgb(chroma, y, u, v, w, h, stridey, strideu, stridev, b
     // run inside the Worker where "libde265" is not available.
     switch (chroma) {
     case 0:  /* libde265.de265_chroma_mono */
-        // TODO(fancycode): implement me
-        console.log("Chroma format not implemented yet", chroma, bppy, bppu, bppv);
+        if (bppy > 8) {
+            _do_convert_monochrome16(y, w, h, stridey, bppy, dest, contrast);
+        } else {
+            // TODO(fancycode): implement me
+            console.log("Chroma format not implemented yet", chroma, bppy, bppu, bppv);
+        }
         break;
     case 1:  /* libde265.de265_chroma_420 */
         if (bppy !== 8 || bppu !== 8 || bppv !== 8) {
@@ -639,11 +691,22 @@ function _do_convert_yuv2rgb(chroma, y, u, v, w, h, stridey, strideu, stridev, b
     return dest;
 }
 
-Decoder.prototype.convert_yuv2rgb = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, imageData, callback) {
+Decoder.prototype.display_image = function(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, imageData, callback) {
     y = HEAPU8.subarray(y, y+(h*stridey));
     u = HEAPU8.subarray(u, u+(h*strideu));
     v = HEAPU8.subarray(v, v+(h*stridev));
-    this.converter.convert(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, imageData, callback);
+
+    if (bppy > 8) {
+        y = new Uint16Array(y.buffer, y.byteOffset, y.byteLength / 2);
+    }
+    if (bppu > 8) {
+        u = new Uint16Array(u.buffer, u.byteOffset, u.byteLength / 2);
+    }
+    if (bppv > 8) {
+        v = new Uint16Array(v.buffer, v.byteOffset, v.byteLength / 2);
+    }
+
+    this.converter.convert(chroma, y, u, v, w, h, stridey, strideu, stridev, bppy, bppu, bppv, contrast, imageData, callback);
 };
 
 /**
@@ -663,6 +726,10 @@ var RawPlayer = function(canvas) {
     this.error_cb = null;
     this.ratio = null;
     this.filters = false;
+    this.contrast = {
+        from: {min:224, max:2674},
+        to  : {min:0  , max:255}};
+        
     this._reset();
 };
 
@@ -672,6 +739,20 @@ RawPlayer.prototype._reset = function() {
     this.image_data = null;
     this.running = false;
     this.pending_image_data = null;
+};
+
+/** @expose */
+RawPlayer.prototype.set_gvminfrom = function(val) {
+    this.contrast.from.min = val;
+};
+RawPlayer.prototype.set_gvmaxfrom = function(val) {
+    this.contrast.from.max = val;
+};
+RawPlayer.prototype.set_gvminto = function(val) {
+    this.contrast.to.min = val;
+};
+RawPlayer.prototype.set_gvmaxto = function(val) {
+    this.contrast.to.max = val;
 };
 
 /** @expose */
@@ -721,7 +802,7 @@ RawPlayer.prototype._display_image = function(image) {
     }
 
     var that = this;
-    image.display(this.image_data, function(display_image_data) {
+    image.display(this.image_data, this.contrast, function(display_image_data) {
         if (window.requestAnimationFrame) {
             that.pending_image_data = display_image_data;
             window.requestAnimationFrame(function() {
@@ -740,7 +821,7 @@ RawPlayer.prototype._handle_onload = function(request, event) {
     var that = this;
     this._set_status("initializing");
 
-    var decoder = new Decoder();
+    var decoder = new Decoder(true);
     decoder.set_image_callback(function(image) {
         that._display_image(image);
         image.free();
