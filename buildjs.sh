@@ -24,8 +24,6 @@ echo "Building shared library..."
 emconfigure ./configure --disable-sse --disable-dec265 --disable-enc265 --disable-sherlock265
 emmake make
 
-export LIBDE265_VERSION=1.0.4
-
 export TOTAL_MEMORY=16777216
 
 export EXPORTED_FUNCTIONS="[ \
@@ -76,7 +74,7 @@ export LIBRARY_FUNCTIONS="[ \
 ]"
 
 echo "Compiling into asm-js..."
-emcc libde265-${LIBDE265_VERSION}/libde265/.libs/libde265.so \
+emcc ./libde265/.libs/libde265.so \
     -s NO_EXIT_RUNTIME=1 \
     -s TOTAL_MEMORY=${TOTAL_MEMORY} \
     -s ALLOW_MEMORY_GROWTH=1 \
@@ -92,7 +90,7 @@ emcc libde265-${LIBDE265_VERSION}/libde265/.libs/libde265.so \
     -o lib/libde265.js
 
 echo "Compiling into asm-js (minimized)..."
-emcc libde265-${LIBDE265_VERSION}/libde265/.libs/libde265.so \
+emcc ./libde265/.libs/libde265.so \
     -s NO_EXIT_RUNTIME=1 \
     -s TOTAL_MEMORY=${TOTAL_MEMORY} \
     -s ALLOW_MEMORY_GROWTH=1 \
