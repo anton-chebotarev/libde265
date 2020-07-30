@@ -18,7 +18,7 @@
 ###git pull
 ###chmod 777 ./configure
 
-###source ./emsdk_env.sh
+###source ../emsdk/emsdk_env.sh
 
 echo "Building shared library..."
 emconfigure ./configure --disable-sse --disable-dec265 --disable-enc265 --disable-sherlock265
