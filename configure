@@ -19247,6 +19247,11 @@ else
 fi
 
 
+if eval "test $enable_dec265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled." >&5
+$as_echo "$as_me: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled." >&2;}
+fi
+
 if eval "test $enable_enc265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Did not find libvideogfx or libsdl, video output of enc265 will be disabled." >&5
 $as_echo "$as_me: WARNING: Did not find libvideogfx or libsdl, video output of enc265 will be disabled." >&2;}
