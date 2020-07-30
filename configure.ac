@@ -282,12 +282,14 @@ fi
 # --- enable example programs ---
 
 AC_ARG_ENABLE([dec265], AS_HELP_STRING([--disable-dec265], [Do not build dec265 decoder program.]))
+AC_ARG_ENABLE([enc265], AS_HELP_STRING([--disable-enc265], [Do not build enc265 decoder program.]))
 AC_ARG_ENABLE([sherlock265], AS_HELP_STRING([--disable-sherlock265], [Do not build sherlock265 visual inspection program.]))
 
 if eval "test x$enable_dec265 = x"      ; then enable_dec265=yes ; fi
+if eval "test x$enable_enc265 = x"      ; then enable_enc265=yes ; fi
 if eval "test x$enable_sherlock265 = x" ; then enable_sherlock265=yes ; fi
 
-if eval "test x$enable_dec265 = xyes" || eval "test x$enable_sherlock265 = xyes" ; then
+if eval "test x$enable_dec265 = xyes" || eval "test x$enable_enc265 = xyes" || eval "test x$enable_sherlock265 = xyes" ; then
    PKG_CHECK_MODULES([VIDEOGFX], [libvideogfx],
                      [AC_DEFINE([HAVE_VIDEOGFX], [1], [Whether libvideogfx was found.])
                       AC_SUBST(VIDEOGFX_CFLAGS)
@@ -298,6 +300,16 @@ if eval "test x$enable_dec265 = xyes" || eval "test x$enable_sherlock265 = xyes"
 fi
 
 if eval "test x$enable_dec265 = xyes" ; then
+   PKG_CHECK_MODULES([SDL], [sdl],
+                     [AC_DEFINE([HAVE_SDL], [1], [Whether libsdl was found.])
+                      AC_SUBST(SDL_CFLAGS)
+                      AC_SUBST(SDL_LIBS)
+                      have_sdl="yes"],
+                     [have_sdl="no"]
+                     )
+fi
+
+if eval "test x$enable_enc265 = xyes" ; then
    PKG_CHECK_MODULES([SDL], [sdl],
                      [AC_DEFINE([HAVE_SDL], [1], [Whether libsdl was found.])
                       AC_SUBST(SDL_CFLAGS)
@@ -323,6 +335,10 @@ AM_CONDITIONAL([HAVE_SDL], [test "x$have_sdl" = "xyes"])
 
 if eval "test $enable_dec265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
   AC_MSG_WARN([Did not find libvideogfx or libsdl, video output of dec265 will be disabled.])
+fi
+
+if eval "test $enable_enc265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
+  AC_MSG_WARN([Did not find libvideogfx or libsdl, video output of enc265 will be disabled.])
 fi
 
 if eval "test $enable_sherlock265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_swscale != yes" ; then
@@ -353,6 +369,7 @@ if eval "test $enable_sherlock265 = yes" ; then
 fi
 
 AM_CONDITIONAL([ENABLE_DEC265], [test "x$enable_dec265" != "xno"])
+AM_CONDITIONAL([ENABLE_ENC265], [test "x$enable_enc265" != "xno"])
 AM_CONDITIONAL([ENABLE_SHERLOCK265], [test "x$enable_sherlock265" != "xno"])
 
 
@@ -360,6 +377,7 @@ AM_CONDITIONAL([ENABLE_SHERLOCK265], [test "x$enable_sherlock265" != "xno"])
 
 AC_MSG_NOTICE([---------------------------------------])
 AC_MSG_NOTICE([Building dec265 example: $enable_dec265])
+AC_MSG_NOTICE([Building enc265 example: $enable_enc265])
 AC_MSG_NOTICE([Building sherlock265 example: $enable_sherlock265])
 AC_MSG_NOTICE([---------------------------------------])
 

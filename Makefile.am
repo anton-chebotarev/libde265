@@ -8,7 +8,10 @@ if ENABLE_DEC265
 SUBDIRS+=dec265
 endif
 
+if ENABLE_ENC265
 SUBDIRS+=enc265
+endif
+
 SUBDIRS+=tools
 SUBDIRS+=acceleration-speed
 

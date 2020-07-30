@@ -641,6 +641,8 @@ ENABLE_SHERLOCK265_FALSE
 ENABLE_SHERLOCK265_TRUE
 ENABLE_DEC265_FALSE
 ENABLE_DEC265_TRUE
+ENABLE_ENC265_FALSE
+ENABLE_ENC265_TRUE
 QTMOC
 QTCHOOSER
 QT_LIBS
@@ -830,6 +832,7 @@ enable_log_info
 enable_log_debug
 enable_log_trace
 enable_dec265
+enable_enc265
 enable_sherlock265
 '
       ac_precious_vars='build_alias
@@ -1508,6 +1511,7 @@ Optional Features:
   --enable-log-debug      turn on logging at debug level (default=no)
   --enable-log-trace      turn on logging at trace level (default=no)
   --disable-dec265        Do not build dec265 decoder program.
+  --disable-enc265        Do not build enc265 decoder program.
   --disable-sherlock265   Do not build sherlock265 visual inspection program.
 
 Optional Packages:
@@ -18759,6 +18763,11 @@ if test "${enable_dec265+set}" = set; then :
   enableval=$enable_dec265;
 fi
 
+# Check whether --enable-enc265 was given.
+if test "${enable_enc265+set}" = set; then :
+  enableval=$enable_enc265;
+fi
+
 # Check whether --enable-sherlock265 was given.
 if test "${enable_sherlock265+set}" = set; then :
   enableval=$enable_sherlock265;
@@ -18766,9 +18775,10 @@ fi
 
 
 if eval "test x$enable_dec265 = x"      ; then enable_dec265=yes ; fi
+if eval "test x$enable_enc265 = x"      ; then enable_enc265=yes ; fi
 if eval "test x$enable_sherlock265 = x" ; then enable_sherlock265=yes ; fi
 
-if eval "test x$enable_dec265 = xyes" || eval "test x$enable_sherlock265 = xyes" ; then
+if eval "test x$enable_dec265 = xyes" || eval "test x$enable_enc265 = xyes" || eval "test x$enable_sherlock265 = xyes" ; then
 
 
 
@@ -19050,6 +19060,87 @@ $as_echo "#define HAVE_SDL 1" >>confdefs.h
 fi
 fi
 
+if eval "test x$enable_enc265 = xyes" ; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SDL" >&5
+$as_echo_n "checking for SDL... " >&6; }
+
+if test -n "$SDL_CFLAGS"; then
+    pkg_cv_SDL_CFLAGS="$SDL_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sdl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SDL_CFLAGS=`$PKG_CONFIG --cflags "sdl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SDL_LIBS"; then
+    pkg_cv_SDL_LIBS="$SDL_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"sdl\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "sdl") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SDL_LIBS=`$PKG_CONFIG --libs "sdl" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SDL_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "sdl" 2>&1`
+        else
+	        SDL_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "sdl" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SDL_PKG_ERRORS" >&5
+
+	have_sdl="no"
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	have_sdl="no"
+
+else
+	SDL_CFLAGS=$pkg_cv_SDL_CFLAGS
+	SDL_LIBS=$pkg_cv_SDL_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_SDL 1" >>confdefs.h
+
+
+
+                      have_sdl="yes"
+fi
+fi
+
 if eval "test x$enable_sherlock265 = xyes" && eval "test x$have_videogfx != xyes" ; then
 
 pkg_failed=no
@@ -19156,9 +19247,9 @@ else
 fi
 
 
-if eval "test $enable_dec265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled." >&5
-$as_echo "$as_me: WARNING: Did not find libvideogfx or libsdl, video output of dec265 will be disabled." >&2;}
+if eval "test $enable_enc265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_sdl != yes" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Did not find libvideogfx or libsdl, video output of enc265 will be disabled." >&5
+$as_echo "$as_me: WARNING: Did not find libvideogfx or libsdl, video output of enc265 will be disabled." >&2;}
 fi
 
 if eval "test $enable_sherlock265 = yes" && eval "test $have_videogfx != yes" && eval "test $have_swscale != yes" ; then
@@ -19480,6 +19571,14 @@ else
   ENABLE_DEC265_FALSE=
 fi
 
+ if test "x$enable_enc265" != "xno"; then
+  ENABLE_ENC265_TRUE=
+  ENABLE_ENC265_FALSE='#'
+else
+  ENABLE_ENC265_TRUE='#'
+  ENABLE_ENC265_FALSE=
+fi
+
  if test "x$enable_sherlock265" != "xno"; then
   ENABLE_SHERLOCK265_TRUE=
   ENABLE_SHERLOCK265_FALSE='#'
@@ -19496,6 +19595,8 @@ fi
 $as_echo "$as_me: ---------------------------------------" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: Building dec265 example: $enable_dec265" >&5
 $as_echo "$as_me: Building dec265 example: $enable_dec265" >&6;}
+{ $as_echo "$as_me:${as_lineno-$LINENO}: Building enc265 example: $enable_enc265" >&5
+$as_echo "$as_me: Building enc265 example: $enable_enc265" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: Building sherlock265 example: $enable_sherlock265" >&5
 $as_echo "$as_me: Building sherlock265 example: $enable_sherlock265" >&6;}
 { $as_echo "$as_me:${as_lineno-$LINENO}: ---------------------------------------" >&5
@@ -19706,6 +19807,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_DEC265_TRUE}" && test -z "${ENABLE_DEC265_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_DEC265\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_ENC265_TRUE}" && test -z "${ENABLE_ENC265_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_ENC265\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${ENABLE_SHERLOCK265_TRUE}" && test -z "${ENABLE_SHERLOCK265_FALSE}"; then
