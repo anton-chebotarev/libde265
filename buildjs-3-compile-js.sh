@@ -41,12 +41,12 @@ export EXPORTED_FUNCTIONS="[ \
     '_de265_change_framerate', \
     '_de265_set_parameter_bool', \
     '_de265_set_parameter_int', \
-    '_de265_get_parameter_bool'
+    '_de265_get_parameter_bool' \
+    '_memset'
 ]"
 
 export LIBRARY_FUNCTIONS="[ \
     'memcpy', \
-    'memset', \
     'malloc', \
     'free'
 ]"
