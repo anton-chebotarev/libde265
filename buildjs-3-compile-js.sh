@@ -54,15 +54,28 @@ export LIBRARY_FUNCTIONS="[ \
 
 echo "Compiling into asm-js..."
 emcc ./libde265/.libs/libde265.so \
-    -s NO_EXIT_RUNTIME=1 \
     -s TOTAL_MEMORY=${TOTAL_MEMORY} \
     -s ALLOW_MEMORY_GROWTH=1 \
     -s ASSERTIONS=0 \
-    -s INVOKE_RUN=0 \
     -s DISABLE_EXCEPTION_CATCHING=1 \
     -s EXPORTED_FUNCTIONS="${EXPORTED_FUNCTIONS}" \
     -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE="${LIBRARY_FUNCTIONS}" \
+    -s WASM=0 -lnodefs.js -s EXIT_RUNTIME=0 -s INVOKE_RUN=0 \
     -O2 \
     --pre-js pre.js \
     --post-js post.js \
     -o ./libde265/.libs/libde265.js
+
+echo "Compiling into wasm..."
+emcc ./libde265/.libs/libde265.so \
+    -s TOTAL_MEMORY=${TOTAL_MEMORY} \
+    -s ALLOW_MEMORY_GROWTH=1 \
+    -s ASSERTIONS=0 \
+    -s DISABLE_EXCEPTION_CATCHING=1 \
+    -s EXPORTED_FUNCTIONS="${EXPORTED_FUNCTIONS}" \
+    -s DEFAULT_LIBRARY_FUNCS_TO_INCLUDE="${LIBRARY_FUNCTIONS}" \
+    -s EXPORT_NAME=libde265 -s WASM_ASYNC_COMPILATION=0 -s MODULARIZE=1 -s WASM=1 -lworkerfs.js -s EXIT_RUNTIME=0 -s INVOKE_RUN=1 \
+    -O2 \
+    --pre-js pre.js \
+    --post-js post.js \
+    -o ./libde265/.libs/libde265wasm.js
