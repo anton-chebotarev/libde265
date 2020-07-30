@@ -10,10 +10,9 @@ endif
 
 if ENABLE_ENC265
 SUBDIRS+=enc265
-endif
-
 SUBDIRS+=tools
 SUBDIRS+=acceleration-speed
+endif
 
 if ENABLE_SHERLOCK265
 SUBDIRS+=sherlock265
